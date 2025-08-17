@@ -8,8 +8,23 @@ st.title("AI Interview Simulator!")
 if "setup_complete" not in st.session_state:
     st.session_state.setup_complete = False
 
+if "user_message_count" not in st.session_state:
+    st.session_state.user_message_count = 0
+
+if "feedback_shown" not in st.session_state:
+    st.session_state.feedback_shown = False
+
+if "messages" not in st.session_state:
+        st.session_state.messages = [{"role": "system", "content": f"You are an HR executive that interviews an interviewee called {st.session_state["name"]} with experience {st.session_state["experience"]} and skills {st.session_state["skills"]}. You should interview them for the position {st.session_state["level"]} {st.session_state["position"]} at the company {st.session_state["company"]}"}]
+
+if "chat_complete" not in st.session_state:
+    st.session_state.chat_complete = False
+
 def complete_setup():
     st.session_state.setup_complete = True
+
+def show_feedback():
+    st.session_state.feedback_shown = True
 
 if not st.session_state.setup_complete:
     # Build the Setup page
@@ -22,11 +37,11 @@ if not st.session_state.setup_complete:
     if "skills" not in st.session_state:
         st.session_state["skills"] = ""
 
-    st.session_state["name"] = st.text_input(label="Name", max_chars=None, value= st.session_state["name"],placeholder="Enter your name")
+    st.session_state["name"] = st.text_input(label="Name", max_chars=40, value= st.session_state["name"],placeholder="Enter your name")
 
-    st.session_state["experience"] = st.text_area(label = "Experience", value=st.session_state["experience"], height=None, max_chars=None, placeholder="Describe your experience")
+    st.session_state["experience"] = st.text_area(label = "Experience", value=st.session_state["experience"], height=None, max_chars=200, placeholder="Describe your experience")
 
-    st.session_state["skills"] = st.text_area(label = "Skills", value="", height=None ,max_chars = None, placeholder= "List your Skills")
+    st.session_state["skills"] = st.text_area(label = "Skills", value="", height=None ,max_chars = 200, placeholder= "List your Skills")
 
     st.write(f"**Your Name**: {st.session_state["name"]}")
     st.write(f"**Your Experience**: {st.session_state["experience"]}")
@@ -81,9 +96,6 @@ if st.session_state.setup_complete:
     if "openai_model" not in st.session_state:
         st.session_state["openai_model"] = "gpt-4o"
 
-    if "messages" not in st.session_state:
-        st.session_state.messages = [{"role": "system", "content": f"You are an HR executive that interviews an interviewee called {st.session_state["name"]} with experience {st.session_state["experience"]} and skills {st.session_state["skills"]}. You should interview them for the position {st.session_state["level"]} {st.session_state["position"]} at the company {st.session_state["company"]}"}]
-
     # Display the chat messages.
     for message in st.session_state.messages:
         if message["role"] != "system":
@@ -91,7 +103,7 @@ if st.session_state.setup_complete:
                 st.markdown(message["content"])
 
     # Implementing the Chat Functionality
-    if prompt := st.chat_input("Your answer."):
+    if prompt := st.chat_input("Your answer.", max_chars=200):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
