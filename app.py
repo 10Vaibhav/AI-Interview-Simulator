@@ -15,7 +15,7 @@ if "feedback_shown" not in st.session_state:
     st.session_state.feedback_shown = False
 
 if "messages" not in st.session_state:
-        st.session_state.messages = [{"role": "system", "content": f"You are an HR executive that interviews an interviewee called {st.session_state["name"]} with experience {st.session_state["experience"]} and skills {st.session_state["skills"]}. You should interview them for the position {st.session_state["level"]} {st.session_state["position"]} at the company {st.session_state["company"]}"}]
+        st.session_state.messages = []
 
 if "chat_complete" not in st.session_state:
     st.session_state.chat_complete = False
@@ -81,7 +81,7 @@ if not st.session_state.setup_complete:
     if st.button("Start Interview", on_click=complete_setup):
         st.write("Setup Complete. Starting interview...")
 
-if st.session_state.setup_complete:
+if st.session_state.setup_complete and not st.session_state.feedback_shown and not st.session_state.chat_complete:
 
     st.info(
         """
@@ -96,26 +96,35 @@ if st.session_state.setup_complete:
     if "openai_model" not in st.session_state:
         st.session_state["openai_model"] = "gpt-4o"
 
+    if not st.session_state.messages:
+        st.session_state.messages = [{"role": "system", "content": f"You are an HR executive that interviews an interviewee called {st.session_state["name"]} with experience {st.session_state["experience"]} and skills {st.session_state["skills"]}. You should interview them for the position {st.session_state["level"]} {st.session_state["position"]} at the company {st.session_state["company"]}"}]
+
     # Display the chat messages.
     for message in st.session_state.messages:
         if message["role"] != "system":
             with st.chat_message(message["role"]):
                 st.markdown(message["content"])
 
-    # Implementing the Chat Functionality
-    if prompt := st.chat_input("Your answer.", max_chars=200):
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
-            st.markdown(prompt)
+    if st.session_state.user_message_count < 5:
+        # Implementing the Chat Functionality
+        if prompt := st.chat_input("Your answer.", max_chars=1000):
+            st.session_state.messages.append({"role": "user", "content": prompt})
+            with st.chat_message("user"):
+                st.markdown(prompt)
 
-        with st.chat_message("assistant"):
-            stream = client.chat.completions.create(
-                model= st.session_state["openai_model"],
-                messages=[
-                    {"role": m["role"], "content": m["content"]} for m in st.session_state.messages
-                ],
-                stream=True,
-            )
-            response = st.write_stream(stream)
-        st.session_state.messages.append({"role": "assistant", "content": response})
+            if st.session_state.user_message_count < 4:
+                with st.chat_message("assistant"):
+                    stream = client.chat.completions.create(
+                        model= st.session_state["openai_model"],
+                        messages=[
+                            {"role": m["role"], "content": m["content"]} for m in st.session_state.messages
+                        ],
+                        stream=True,
+                    )
+                    response = st.write_stream(stream)
+                st.session_state.messages.append({"role": "assistant", "content": response})
+            st.session_state.user_message_count += 1
+
+        if st.session_state.user_message_count >= 5:
+            st.session_state.chat_complete = True
 
