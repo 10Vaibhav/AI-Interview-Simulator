@@ -1,5 +1,6 @@
 from openai import OpenAI
 import streamlit as st 
+from streamlit_js_eval import streamlit_js_eval
 
 st.set_page_config(page_title="AI Interview Simulator", page_icon="💬")
 
@@ -42,10 +43,6 @@ if not st.session_state.setup_complete:
     st.session_state["experience"] = st.text_area(label = "Experience", value=st.session_state["experience"], height=None, max_chars=200, placeholder="Describe your experience")
 
     st.session_state["skills"] = st.text_area(label = "Skills", value="", height=None ,max_chars = 200, placeholder= "List your Skills")
-
-    st.write(f"**Your Name**: {st.session_state["name"]}")
-    st.write(f"**Your Experience**: {st.session_state["experience"]}")
-    st.write(f"**Your Skills**: {st.session_state["skills"]}")
 
     st.subheader("Company and Position", divider = "rainbow")
 
@@ -139,7 +136,7 @@ if st.session_state.feedback_shown:
 
     feedback_client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
-    feedback_completion = feedback_client.completions.create(
+    feedback_completion = feedback_client.chat.completions.create(
         model="gpt-4o",
         messages = [
             {
@@ -156,4 +153,7 @@ if st.session_state.feedback_shown:
     )
 
     st.write(feedback_completion.choices[0].message.content)
+
+    if st.button("Restart Interview", type="primary"):
+        streamlit_js_eval(js_expressions = "parent.window.location.reload()")
 
